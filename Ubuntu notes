@@ -1,0 +1,9 @@
+#To enable copy paste
+
+sudo apt install build-essential
+sudo apt install build-essential dkms linux-headers-$(uname -r)
+sudo apt install virtualbox-guest-x11
+
+#To enable root user login
+sudo apt install vim
+https://itsfoss.com/ubuntu-login-root/
