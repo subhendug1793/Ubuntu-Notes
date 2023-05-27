@@ -7,3 +7,15 @@ sudo apt install virtualbox-guest-x11
 #To enable root user login
 sudo apt install vim
 https://itsfoss.com/ubuntu-login-root/
+
+
+
+{
+ "exec-opts": ["native.cgroupdriver=systemd"]
+}
+
+Then
+systemctl daemon-reload
+systemctl restart docker
+systemctl restart kubelet
+kubeadm reset
