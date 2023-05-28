@@ -1,0 +1,25 @@
+Hostname: hello-minikube-6b75d57bbd-2zxtq
+Pod Information:
+-no pod information available-
+Server values:
+server_version"nginx: 1.13.3
+lua: 10008
+Request Information:
+client_address=172.20.43.136
+method-GET
+real path=/
+query-
+request_ version=1.1
+request_scheme-http
+request_uri-http://13.127.46.219:8080/
+Request Headers:
+accept=text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q-0.8,application/signed-exchange;v=b3
+accept-encoding-gzip, deflate
+accept-language-en-US,en;q-0.9,hi;q-0.8
+cache-control-max-age-0
+connection-keep-alive
+host=13.127.46.219:30035
+upgrade-insecure-requests-l
+user-agent-Mozilla/5.0 (Macintosh; Intel Mac OS x 10_14_5) Apple₩ebkit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36
+Request Body:
+-no body in request-
