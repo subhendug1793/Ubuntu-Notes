@@ -22,7 +22,7 @@ kubeadm reset
 
 juju issue:
 https://stackoverflow.com/questions/65397050/minikube-does-not-start-on-ubuntu-20-04-lts-exiting-due-to-guest-provision
-ns-1363.awsdns-42.org
-ns-195.awsdns-24.com
-ns-1783.awsdns-30.co.uk
-ns-780.awsdns-33.net
+ns-246.awsdns-30.com.
+ns-1360.awsdns-42.org.
+ns-728.awsdns-27.net.
+ns-1779.awsdns-30.co.uk.
