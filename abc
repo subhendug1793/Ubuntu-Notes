@@ -131,3 +131,189 @@ kubectl label nodes minikube disktype=ssd
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#podlabels.yml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-web
+  labels:
+    app: nginx-pod
+spec:
+  containers:
+  - name: nginx
+    image: nginx:1.16.0
+    ports:
+    - name: nginxport
+      containerPort: 80
+  nodeSelector:
+    disktype: ssd
+
+#podmanifest.yml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginxwebproxy
+  labels:
+    app: nginxpod
+spec:
+  containers:
+  - name: nginx
+    image: nginx:1.16.0
+    ports:
+      - name: nginxport
+        containerPort: 80
+        
+#podservice.yml
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+spec:
+  selector:
+    app: nginxpod
+  ports:
+  - protocol: TCP
+    port: 80
+    NodePort: 31050
+    targetPort: nginxport
+    
+#pods.yml    
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod1
+  labels:
+    tier: frontend
+spec:
+  containers:
+  - name: hello1
+    image: gcr.io/google-samples/hello-app:2.0
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod2
+  labels:
+    tier: frontend
+spec:
+  containers:
+  - name: hello2
+    image: gcr.io/google-samples/hello-app:1.0
+    
+#replicaset.yml 
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: frontend
+  labels:
+    app: guestbook
+    tier: frontend
+spec:
+  #modify replicas according to your case
+  replicas: 3
+  selector:
+    matchLabels:
+      tier: frontend
+  template:
+    metadata:
+      labels:
+        tier: frontend
+    spec:
+      containers:
+      - name: php-redis
+        image: gcr.io/google_samples/gb-frontend:v3
+        
+#replication.yml
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: nginx
+spec:
+  replicas: 3
+  selector:
+    app: nginx
+  template:
+    metadata:
+      name: nginx
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx
+        ports:
+        - containerPort: 80
+        
+#webservicedep.yml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.7.9
+        ports:
+        - containerPort: 80
+        
+        
+
+
+
+
+
+
+
+
