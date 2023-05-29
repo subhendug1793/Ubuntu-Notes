@@ -1,0 +1,120 @@
+#Minikube_installation
+
+sudo apt-get update
+sudo apt-get install apt-transport-https ca-certificates curl software-properties-common
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+
+sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+$(lsb_release -cs) \
+stable"
+sudo apt-get update
+sudo apt-get install docker-ce
+docker version
+
+curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
+chmod +x ./kubectl
+ls -lrt
+sudo mv ./kubectl /usr/local/bin/kubectl
+kubectl version
+
+curl -Lo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64 && chmod +x minikube
+sudo install minikube /usr/local/bin
+
+wget -q https://www.virtualbox.org/download/oracle_vbox_2016.asc -O- | sudo apt-key add -
+sudo apt-get update
+sudo apt-get install virtualbox
+minikube start
+minikube start --driver=none
+minikube start --vm-driver=virtualbox
+rm /tmp/juju-*
+minikube stop
+minikube delete
+sudo minikube config set driver virtualbox 
+sudo minikube config set driver docker
+minikube start --force --driver=virtualbox
+minikube start --force --driver=docker
+minikube status
+
+kubectl run hello-minikube --image=k8s.gcr.io/echoserver:1.10 --port=8080
+kubectl get pod
+
+
+
+Prepare AWS for Kops
+
+curl -Lo kops https://github.com/kubernetes/kops/releases/download/$(curl -s https://api.github.com/repos/kubernetes/kops/releases/latest | grep tag_name | cut -d '"' -f 4)/kops-linux-amd64
+chmod +x ./kops
+sudo mv ./kops /usr/local/bin/
+
+curl -Lo kubectl https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
+chmod +x ./kubectl
+sudo mv ./kubectl /usr/local/bin/kubectl
+
+sudo apt-get install python3-pip
+pip install awscli
+
+aws configure
+AKIAYGU6URUGAGXQVQLR
+VqBa4VnbIN2ZpyNRilLjMo01e6NPA4ev2oWReC39
+
+ls -lrt ~/.aws/
+
+ssh-keygen -f .ssh/id_rsa
+
+kops create cluster --yes --state=s3://kops-storage-93 --zones=us-east-1a --node-count=3 --node-size=t2.micro --master-size=t2.micro --name=test.k8s.local
+kubectl get pod
+
+kubectl run hello-minikube --image=k8s.gcr.io/echoserver:1.10 --port=8080
+kubectl expose deployment hello-minikube --type=NodePort
+
+kubectl get services
+kops delete cluster --name test.k8s.local --yes --state=s3://kops-storage-93
+
+docker build -t mgnignx:latest .
+docker run -d --name alpinenginx -p 8093:80 nginx:alpine
+docker run -d --name mycustomnginx -p 8090:80 mgnignx
+
+kubectl create deployment magicalnginx --image=subhendug1793/mgnignx
+kubectl get deployments
+kubectl describe deployment magicalnginx
+kubectl create service nodeport magicalnginx --tcp=80:80
+kubectl get svc
+minikube service magicalnginx --url
+kubectl delete services magicalnginx
+kubectl delete deployment magicalnginx
+
+kops create cluster --yes --state=s3://kops-storage-ap1 --zones=ap-south-1a --node-size=t2.micro --master-size=t2.medium --name=test.k8s.local
+/swapfile                                 none            swap    sw              0       0
+
+kubectl create deployment magicalnginx --image=subhendug1793/mgnignx
+kubectl create service loadbalancer magicalnginx --tcp=80:80
+
+kubectl delete services magicalnginx
+kubectl delete deployment magicalnginx
+
+kubectl create -f replication.yml
+kubectl get pods
+kubectl describe rc/nginx
+kubectl delete pod nginx-ltp4q
+kubectl scale --replicas=2 rc/nginx
+kubectl delete rc/nginx
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
