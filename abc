@@ -118,10 +118,14 @@ kubectl edit deployment nginx-deployment
 kubectl get nodes --show-labels
 kubectl label nodes minikube disktype=ssd
 
+kubectl describe pod describe pod liveness-exec
+kubectl create secret generic db-cred --from-file=./username.txt  --from-file=./password.txt
+kubectl create secret generic db-cred-special --from-literal=username=subhendug --from-literal=password=S\!B\\*d\$zDsB
 
-
-
-
+echo -n 'subhendug' | base64
+kubectl get secret mysecret-manifest -o yaml
+echo 'azhzdGVzdEAxMjM=' | base64 --decode
+kubectl exec -it mypod-voulmesecret -- /bin/bash
 
 
 
@@ -308,9 +312,130 @@ spec:
         ports:
         - containerPort: 80
         
-        
+#pod-liveness-cmd.yml        
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    test: liveness
+  name: liveness-exec
+spec:
+  containers:
+  - name: liveness
+    image: k8s.gcr.io/busybox
+    args:
+    - /bin/sh
+    - -c
+    - touch /tmp/healthy; sleep 60; rm -rf /tmp/healthy; sleep 600
+    livenessProbe:
+      exec:
+        command:
+        - cat
+        - /tmp/healthy
+      initialDelaySeconds: 5
+      periodSeconds: 5
 
-
+#pod-liveness-http.yml
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    test: liveness
+  name: liveness-http
+spec:
+  containers:
+  - name: liveness
+    image: k8s.gcr.io/liveness
+    args:
+    - /server
+    livenessProbe:
+      httpGet:
+        path: /healthz
+        port: 8080
+        httpHeaders:
+        - name: Custom-Header
+          value: Awesome
+      initialDelaySeconds: 3
+      periodSeconds: 3
+      
+#pod-readiness.yml
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    test: liveness
+  name: readiness-exec
+spec:
+  containers:
+  - name: readiness
+    image: k8s.gcr.io/busybox
+    args:
+    - /bin/sh
+    - -c
+    - touch /tmp/healthy; sleep 60; rm -rf /tmp/healthy; sleep 600
+    livenessProbe:
+      exec:
+        command:
+        - cat
+        - /tmp/healthy
+      initialDelaySeconds: 15
+      periodSeconds: 5
+    readinessProbe:
+      exec:
+        command:
+        - cat
+        - /tmp/healthy
+      initialDelaySeconds: 15
+      periodSeconds: 5
+      
+#pod-lifecycle-hooks.yml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: lifecycle-demo
+spec:
+  containers:
+  - name: lifecycle-demo-container
+    image: nginx
+    lifecycle:
+      postStart:
+        exec:
+          command: ["/bin/sh", "-c", "echo Hello from the postStart handler > /usr/share/message"]
+      preStop:
+        exec:
+          command: ["/bin/sh","-c","nginx -s quit; while killall -0 nginx; do sleep 1; done"]
+          
+#secrets.yml          
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysecret-manifest
+type: Opaque
+data:
+  username: c3ViaGVuZHVn
+  password: azhzdGVzdEAxMjM=
+  
+#pod-volume-secrets.yml  
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mypod-voulmesecret
+spec:
+  containers:
+  - name: volumesecret
+    image: redis
+    volumeMounts:
+    - name: foo
+      mountPath: "/etc/foo"
+      readOnly: true
+  volumes:
+  - name: foo
+    secret:
+      secretName: mysecret-manifest          
+      
+      
+      
+      
 
 
 
