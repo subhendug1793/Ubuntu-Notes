@@ -83,7 +83,7 @@ minikube service magicalnginx --url
 kubectl delete services magicalnginx
 kubectl delete deployment magicalnginx
 
-kops create cluster --yes --state=s3://kops-storage-ap1 --zones=ap-south-1a --node-size=t2.micro --master-size=t2.medium --name=test.k8s.local
+kops create cluster --yes --state=s3://kops-storage-ap1 --zones=ap-south-1a --node-size=t2.micro --master-size=t2.micro --name=sg1793.online
 /swapfile                                 none            swap    sw              0       0
 
 kubectl create deployment magicalnginx --image=subhendug1793/mgnignx
@@ -151,7 +151,7 @@ kubectl exec -it mypod-voulmesecret -- /bin/bash
 
 
 
-
+AWSCompromisedKeyQuarantineV2
 
 
 
@@ -435,7 +435,12 @@ spec:
       
       
       
-      
+0530 14:11:56.363133 1780909 executor.go:155] No progress made, sleeping before retrying 4 task(s)
+I0530 14:12:06.365222 1780909 executor.go:111] Tasks: 74 done / 92 total; 4 can run
+W0530 14:12:07.503363 1780909 executor.go:139] error running task "IAMInstanceProfile/nodes.sg1793.online" (0s remaining to succeed): error creating IAMInstanceProfile: AccessDenied: User: arn:aws:iam::564047154444:user/kops is not authorized to perform: iam:CreateInstanceProfile on resource: arn:aws:iam::564047154444:instance-profile/nodes.sg1793.online with an explicit deny in an identity-based policy
+	status code: 403, request id: b1a3b8f2-7a32-4f91-9933-ce7ce55f33b9
+W0530 14:12:07.503392 1780909 executor.go:139] error running task "IAMRole/nodes.sg1793.online" (0s remaining to succeed): error creating IAMRole: AccessDenied: User: arn:aws:iam::564047154444:user/kops is not authorized to perform: iam:CreateRole on resource: arn:aws:iam::564047154444:role/nodes.sg1793.online with an explicit deny in an identity-based policy
+	status code: 403, request id: 721f487b-b368-4b8e-a6ea-154b84242928      
 
 
 
