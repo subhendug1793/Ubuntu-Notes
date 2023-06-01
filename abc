@@ -127,8 +127,8 @@ kubectl get secret mysecret-manifest -o yaml
 echo 'azhzdGVzdEAxMjM=' | base64 --decode
 kubectl exec -it mypod-voulmesecret -- /bin/bash
 
-
-
+kubectl logs --follow database
+kubectl exec database -it -- mysql -u root -p
 
 
 
@@ -433,7 +433,239 @@ spec:
     secret:
       secretName: mysecret-manifest          
       
-      
+#mysql-database.yml      
+apiVersion: v1
+kind: Pod
+metadata:
+  name: database
+  labels:
+    app: database
+spec:
+  containers:
+  - name: mysql
+    image: mysql:5.7
+    ports:
+    - name: mysql-port
+      containerPort: 3306
+    env:
+      - name: MYSQL_ROOT_PASSWORD
+        value: rootpassword
+      - name: MYSQL_USER
+        value: helloworld
+      - name: MYSQL_PASSWORD
+        value: password
+      - name: MYSQL_DATABASE
+        value: helloworld
+
+#mysqldb-service.yml
+apiVersion: v1
+kind: Service
+metadata:
+  name: database-service
+spec:
+  ports:
+  - port: 3306
+    protocol: TCP
+  selector:
+    app: database
+  type: NodePort
+
+#nodejs-web.yml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nodejs-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nodejs-web
+  template:
+    metadata:
+      labels:
+         app: nodejs-web
+    spec:
+      containers:
+      - name: kubernetes-demo
+        image: anshuldevops/kubernetes-demo
+        command: ["node", "index-db.js"]
+        ports:
+        - name: nodejs-port
+          containerPort: 3000
+        env:
+          - name: MYSQL_HOST
+            value: database-service
+          - name: MYSQL_USER
+            value: root
+          - name: MYSQL_PASSWORD
+            value: rootpassword
+          - name: MYSQL_DATABASE
+            value: helloworld
+
+#nodejs-service.yml
+apiVersion: v1
+kind: Service
+metadata:
+  name: nodejs-web-service
+spec:
+  ports:
+  - port: 3000
+    protocol: TCP
+  selector:
+    app: nodejs-web
+  type: NodePort
+  
+#simple-configmap.yml  
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: simple-configmap
+  namespace: default
+data:
+  strategy.type: HFT
+  strategy.maxVolume: "3000"
+  strategy.risk: high
+  
+#demo-web-pod.yml  
+apiVersion: v1
+kind: Pod
+metadata:
+  name: demo-web
+spec:
+  containers:
+  - name: envtest
+    image: anshuldevops/kubernetes-web:1.10.6
+    ports:
+    - containerPort: 8080
+    env:
+    - name: STRATEGY_RISK
+      valueFrom:
+        configMapKeyRef:
+          name: simple-configmap
+          key: strategy.risk
+    - name: STRATEGY_TYPE
+      valueFrom:
+        configMapKeyRef:
+          name: simple-configmap
+          key: strategy.type
+
+#posix-config.yml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: posix-config
+  namespace: default
+data:
+  FONT_DEFAULT_COLOR: green
+  FONT_DEFAULT_SIZE: "14px"
+
+#posix-pod-demo.yml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: demo-posix-env
+spec:
+  containers:
+  - name: posix-test
+    image: anshuldevops/kubernetes-web:1.10.6
+    ports:
+    - containerPort: 8080
+  envFrom:
+  - configMapRef:
+     name: posix-config
+
+
+demo-config-pod.yml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: demo-config-volume
+spec:
+  containers:
+  - name: demo-cofigvol
+    image: anshuldevops/kubernetes-web:1.10.6
+    volumeMounts:
+    - name: config-volume
+      mountPath: /etc/config
+  volumes:
+    - name: config-volume
+      configMap:
+      name: simple-configmap
+  restartPolicy: Never
+
+#nginx-deployment.yml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-official-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx-official
+  template:
+    metadata:
+      labels:
+        app: nginx-official
+    spec:
+      containers:
+      - name: nginx-official
+        image: nginx:latest
+        ports:
+        - containerPort: 8080
+        
+#nginx-deployment-service.yml        
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-official-service
+spec:
+  type: NodePort
+  ports:
+  - protocol: TCP
+    port: 80
+    nodePort: 31303
+  selector:
+    app: nginx-official
+    
+#magicalnginx-deployment.yml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: magicalnginx-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: magical-nginx
+  template:
+    metadata:
+      labels:
+        app: magical-nginx
+    spec:
+      containers:
+      - name: magical-nginx
+        image: anshuldevops/magicalnginx:latest
+        ports:
+        - name: nginx-port
+          containerPort: 3000
+
+#magicalnginx-deployment-service.yml    
+apiVersion: v1
+kind: Service
+metadata:
+  name: magical-nginx
+spec:
+  type: NodePort
+  ports:
+  - port: 80
+    nodePort: 31304
+    protocol: TCP
+    name: http
+  selector:
+    app: magical-nginx
+    
+           
       
 0530 14:11:56.363133 1780909 executor.go:155] No progress made, sleeping before retrying 4 task(s)
 I0530 14:12:06.365222 1780909 executor.go:111] Tasks: 74 done / 92 total; 4 can run
