@@ -130,13 +130,13 @@ kubectl exec -it mypod-voulmesecret -- /bin/bash
 kubectl logs --follow database
 kubectl exec database -it -- mysql -u root -p
 
+curl 192.168.49.2 -H 'Host: nginx-official.example.com'
 
+kubectl get persistentvolumeclaim
+kubectl expose deployment httpd --type=NodePort
 
-
-
-
-
-
+kops create cluster --yes --state=s3://kops-storage-ap1 --zones=ap-south-1a --node-size=t2.micro --master-size=t2.micro --name=test.k8s.local
+kops delete cluster --name=test.k8s.local --yes --state=s3://kops-storage-ap1
 
 
 
@@ -665,8 +665,240 @@ spec:
   selector:
     app: magical-nginx
     
-           
-      
+#ingress-controller.yml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nginx-rules
+spec:
+  rules:
+  - host: nginx-official.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: nginx-official-service
+            port:
+              number: 80
+  - host: magical-nginx.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: magical-nginx
+            port:
+              number: 80
+
+#emptyDir-pod.yml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: redis
+spec:
+  containers:
+  - name: redis
+    image: redis
+    volumeMounts:
+    - name: redis-storage
+      mountPath: /data/redis
+  volumes:
+  - name: redis-storage
+    emptyDir: {}           
+
+#hostpath-pv.yml
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: pv-local
+  labels:
+    type: local
+spec:
+  storageClassName: local
+  capacity:
+    storage: 1Gi
+  accessModes:
+  - ReadWriteOnce
+  hostPath:
+    path: "/home/docker/data"
+
+#hostpath-pvc.yml
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: hostpath-pvc
+spec:
+  storageClassName: local
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  selector:
+    matchLabels:
+      type: local
+
+#apache-deployment.yml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: httpd
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: httpd
+  template:
+    metadata:
+      labels:
+        app: httpd
+    spec:
+      containers:
+      - image: httpd:latest
+        name: httpd
+        ports:
+        - containerPort: 80
+          name: web
+        volumeMounts:
+        - name: web
+          mountPath: /usr/local/apache2/htdocs
+      volumes:
+      - name: web
+        persistentVolumeClaim:
+          claimName: hostpath-pvc
+
+#storageclass.yml
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: aws-standard
+provisioner: kubernetes.io/aws-ebs
+parameters:
+  type: gp2
+  zone: ap-south-1a
+
+#pv-claim.yml  
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysqldb-storage
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 8Gi
+  storageClassName: aws-standard
+  
+#secrects.yml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: wordpress-secrets
+type: Opaque
+data:
+  db-password: cGFzc3dvcmQ=
+
+#mysqlDB.yml
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: wordpress-db
+spec:
+  replicas: 1
+  selector:
+    app: wordpress-db
+  template:
+    metadata:
+      name: wordpress-db
+      labels:
+        app: wordpress-db
+    spec:
+      containers:
+      - name: mysql
+        image: mysql:5.7
+        args:
+          - "--ignore-db-dir=lost+found"
+        ports:
+        - name: mysql-port
+          containerPort: 3306
+        env:
+          - name: MYSQL_ROOT_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: wordpress-secrets
+                key: db-password
+        volumeMounts:
+        - mountPath: "/var/lib/mysql"
+          name: mysql-storage
+      volumes:
+        - name: mysql-storage
+          persistentVolumeClaim:
+            claimName: mysqldb-storage
+            
+#Mysqldb-service.yml
+apiVersion: v1
+kind: Service
+metadata:
+  name: wordpress-db
+spec:
+  ports:
+  - port: 3306
+    protocol: TCP
+  selector:
+    app: wordpress-db
+  type: NodePort
+  
+#wordpress.yml  
+apiVersion: v1
+kind: Deployment
+metadata:
+  name: wordpress-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wordpress
+  template:
+    metadata:
+      labels:
+        app: wordpress
+    spec:
+      containers:
+      - name: wordpress
+        image: wordpress:5.2-php7.1
+        ports:
+        - name: http-port
+          containerPort: 80
+        env:
+          - name: WORDPRESS_DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: wordpress-secrets
+                key: db-password
+          - name: WORDPRESS_DB_HOST
+            value: wordpress-db
+            
+#wordpress-service.yml
+apiVersion: v1
+kind: Service
+metadata:
+  name: wordpress
+spec:
+  ports:
+  - port: 80
+    targetPort: http-port
+    protocol: TCP
+  selector:
+    app: wordpress
+  type: LoadBalancer
+  
+  
+            
+                      
 0530 14:11:56.363133 1780909 executor.go:155] No progress made, sleeping before retrying 4 task(s)
 I0530 14:12:06.365222 1780909 executor.go:111] Tasks: 74 done / 92 total; 4 can run
 W0530 14:12:07.503363 1780909 executor.go:139] error running task "IAMInstanceProfile/nodes.sg1793.online" (0s remaining to succeed): error creating IAMInstanceProfile: AccessDenied: User: arn:aws:iam::564047154444:user/kops is not authorized to perform: iam:CreateInstanceProfile on resource: arn:aws:iam::564047154444:instance-profile/nodes.sg1793.online with an explicit deny in an identity-based policy
